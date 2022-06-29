@@ -1,0 +1,4 @@
+[submodule "fusexx"]
+	path = thirth_party/fusexx
+	url = https://github.com/hyj0/fusexx
+	branch = hyj
