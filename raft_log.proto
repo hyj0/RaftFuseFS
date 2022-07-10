@@ -1,0 +1,20 @@
+syntax="proto2";
+package RaftLog;
+
+enum OperateType {
+    OP_TYPE_OPEN = 0;
+    OP_TYPE_WRITE = 1;
+    OP_TYPE_UNLINK = 2;
+    OP_TYPE_CREATE = 3;
+};
+
+message LogData {
+    required OperateType op_type = 2;
+    required string func_name = 1;
+    required string pathname = 3;
+    optional int32 count = 4;
+    optional uint32 offset = 5;
+    optional bytes buf = 6;
+    optional int32 flags = 7;
+    optional int32 mode = 8;
+}

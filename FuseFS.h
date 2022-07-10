@@ -20,6 +20,8 @@ using namespace std;
 #include <fuse3/fuse.h>
 #include "fuse++"
 #include <string>
+#include <braft/util.h>
+#include "RaftStateMachine.h"
 
 using namespace std;
 
@@ -31,10 +33,12 @@ struct xmp_dirp {
 
 class FuseFS : public fuse {
 public:
-    FuseFS() {}
+    FuseFS(RaftStateMachine &raftStateMachine) : raftStateMachine(raftStateMachine) {
+        raftStateMachine.setPFuseFs(this);
+    }
     ~FuseFS() {}
 
-protected:
+public:
     virtual int getattr(const std::string &pathname, struct stat *buf);
 
     virtual int opendir(const string &name, struct fuse_file_info *fi);
@@ -62,12 +66,16 @@ protected:
 
     virtual int truncate(const string &path, off_t length);
 
+protected:
+    virtual int release(const string &pathname, struct fuse_file_info *fi);
+
 private:
     string fixPath(string path) {
         string retStr = "";
         retStr = retStr + "/tmp/FuseSrc/" + path;
         return retStr;
     }
+    RaftStateMachine &raftStateMachine;
 };
 
 

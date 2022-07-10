@@ -2,3 +2,11 @@
 	path = thirth_party/fusexx
 	url = https://github.com/hyj0/fusexx
 	branch = hyj
+[submodule "braft"]
+	path = thirth_party/braft
+	url = https://github.com/baidu/braft
+	branch = master
+[submodule "brpc"]
+	path = thirth_party/brpc
+	url = https://github.com/apache/incubator-brpc
+	branch = master
