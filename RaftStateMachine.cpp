@@ -13,7 +13,7 @@ DEFINE_string(conf, "", "Initial configuration of the replication group");
 DEFINE_int32(election_timeout_ms, 5000,
              "Start election in such milliseconds if disconnect with the leader");
 DEFINE_int32(snapshot_interval, -1, "Interval between each snapshot");
-DEFINE_string(data_path, "./raft_data", "Path of data stored on");
+DEFINE_string(data_path, "./raft_data", "Path of data stored on, use abs path");
 DEFINE_string(group, "fuse", "Id of the replication group");
 
 int RaftStateMachine::start() {
@@ -73,7 +73,7 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
             pFI = NULL;
         }
 
-        LOG(INFO) << LVAR(__FUNCTION__) << LVAR(logData.DebugString());
+        LOG(INFO) << LVAR(__FUNCTION__) << LVAR(logData.func_name());
         switch(logData.op_type()) {
             case RaftLog::OP_TYPE_WRITE: {
                 CallBackLock callBackLock(raftClosure == NULL? 2:1);
@@ -144,7 +144,7 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
 }
 
 int RaftStateMachine::apply(RaftLog::LogData &logData, struct fuse_file_info *fi) {
-    LOG(INFO) << LVAR(__FUNCTION__) <<LVAR(logData.DebugString());
+    LOG(INFO) << LVAR(__FUNCTION__) <<LVAR(logData.func_name());
     // Serialize request to IOBuf
     const int64_t term = _leader_term.load(butil::memory_order_relaxed);
     if (term < 0) {

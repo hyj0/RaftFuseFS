@@ -7,6 +7,8 @@
 #include "raft_log.pb.h"
 #include "Utils.h"
 
+DEFINE_string(src_dir, "/tmp/FuseSrc/", "src dir");
+
 //base code from https://github.com/libfuse/libfuse/blob/master/example/passthrough_fh.c
 
 int FuseFS::getattr(const std::string &pathname, struct stat *buf) {
@@ -162,7 +164,7 @@ int FuseFS::write(const std::string &pathname, const char *buf, size_t count, of
         logData.set_count(count);
         logData.set_offset(offset);
         res = raftStateMachine.apply(logData, fi);
-        if (res != 0) {
+        if (res < 0) {
             LOG(ERROR) << "app err " << LVAR(res) << LVAR(__FUNCTION__) << LVAR(pathname)  ;
             return res;
         }

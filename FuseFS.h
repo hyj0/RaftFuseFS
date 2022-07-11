@@ -22,6 +22,9 @@ using namespace std;
 #include <string>
 #include <braft/util.h>
 #include "RaftStateMachine.h"
+#include "gflags/gflags.h"
+
+DECLARE_string(src_dir);
 
 using namespace std;
 
@@ -72,7 +75,7 @@ protected:
 private:
     string fixPath(string path) {
         string retStr = "";
-        retStr = retStr + "/tmp/FuseSrc/" + path;
+        retStr = retStr + "/" + FLAGS_src_dir + "/" + path;
         return retStr;
     }
     RaftStateMachine &raftStateMachine;
