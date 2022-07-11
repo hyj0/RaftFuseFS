@@ -6,6 +6,7 @@
 #include "FuseFS.h"
 #include "raft_log.pb.h"
 #include "Utils.h"
+using namespace RaftLog;
 
 DEFINE_string(src_dir, "/tmp/FuseSrc/", "src dir");
 
@@ -277,18 +278,258 @@ int FuseFS::utimens(const string &pathname, const struct timespec tv[2]) {
     return 0;
 }
 
-int FuseFS::truncate(const string &path, off_t length) {
+int FuseFS::truncate(const string &pathname, off_t length) {
     int res;
-    //LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) ;
-
-    res = ::truncate(fixPath(path).c_str(), length);
-    if (res == -1)
-        return -errno;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) ;
+    if (!IsCallBack()) {
+        RaftLog::LogData logData;
+        logData.set_op_type(RaftLog::OP_TYPE_TRUNCATE);
+        logData.set_func_name(__FUNCTION__);
+        logData.set_pathname(pathname);
+        logData.set_length(length);
+        res = raftStateMachine.apply(logData, NULL);
+        if (res < 0) {
+            LOG(INFO) << LVAR(__FUNCTION__) << "err " << LVAR(res) << LVAR(pathname);
+            return res;
+        }
+        return res;
+    } else {
+        res = ::truncate(fixPath(pathname).c_str(), length);
+        if (res == -1)
+            return -errno;
+        return res;
+    }
 
     return 0;
 }
 
 int FuseFS::release(const string &pathname, struct fuse_file_info *fi) {
     close(fi->fh);
+}
+
+int FuseFS::readlink(const string &pathname, char *buffer, size_t size) {
+    int res;
+
+    res = ::readlink(fixPath(pathname).c_str(), buffer, size - 1);
+    if (res == -1)
+        return -errno;
+
+    buffer[res] = '\0';
+    return 0;
+}
+
+int FuseFS::mknod(const string &pathname, mode_t mode, dev_t dev) {
+    return fuse::mknod(pathname, mode, dev);
+}
+
+int FuseFS::symlink(const string &from, const string &to) {
+    int res;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(from) << LVAR(to);
+    if (!IsCallBack()) {
+        RaftLog::LogData logData;
+        logData.set_op_type(RaftLog::OP_TYPE_SYMLINK);
+        logData.set_func_name(__FUNCTION__);
+        logData.set_from(from);
+        logData.set_to(to);
+        res = raftStateMachine.apply(logData, NULL);
+        if (res < 0) {
+            LOG(INFO) << LVAR(__FUNCTION__) << "err " << LVAR(res) << LVAR(from) << LVAR(to);
+            return res;
+        }
+        return res;
+    } else {
+        res = ::symlink(from.c_str(), fixPath(to).c_str());
+        if (res == -1)
+            return -errno;
+        return 0;
+    }
+    return 0;
+}
+
+int FuseFS::rename(const string &from, const string &to, unsigned int flags) {
+    int res;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(from) << LVAR(to);
+
+    /* When we have renameat2() in libc, then we can implement flags */
+    if (flags)
+        return -EINVAL;
+
+    if (!IsCallBack()) {
+        LogData logData;
+        logData.set_op_type(RaftLog::OP_TYPE_RENAME);
+        logData.set_func_name(__FUNCTION__);
+        logData.set_from(from);
+        logData.set_to(to);
+        logData.set_flags(flags);
+        res = raftStateMachine.apply(logData, NULL);
+        if (res < 0) {
+            LOG(INFO) << LVAR(__FUNCTION__) << "err " << LVAR(res) << LVAR(from) << LVAR(to);
+            return res;
+        }
+        return res;
+    } else {
+        res = ::rename(fixPath(from).c_str(), fixPath(to).c_str());
+        if (res == -1)
+            return -errno;
+        return res;
+    }
+
+    return 0;
+}
+
+int FuseFS::link(const string &from, const string &to) {
+    int res;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(from) << LVAR(to);
+    if (!IsCallBack()) {
+        LogData logData;
+        logData.set_op_type(RaftLog::OP_TYPE_LINK);
+        logData.set_func_name(__FUNCTION__);
+        logData.set_from(from);
+        logData.set_to(to);
+        res = raftStateMachine.apply(logData, NULL);
+        if (res < 0) {
+            LOG(INFO) << LVAR(__FUNCTION__) << "err " << LVAR(res) << LVAR(from) << LVAR(to);
+            return res;
+        }
+        return res;
+    } else {
+        res = ::link(fixPath(from).c_str(), fixPath(to).c_str());
+        if (res == -1)
+            return -errno;
+        return 0;
+    }
+
+    return 0;
+}
+
+int FuseFS::chmod(const string &pathname, mode_t mode) {
+    int res;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname);
+
+    if (!IsCallBack()) {
+        LogData logData;
+        logData.set_op_type(RaftLog::OP_TYPE_CHMODE);
+        logData.set_func_name(__FUNCTION__);
+        logData.set_pathname(pathname);
+        logData.set_mode(mode);
+        res = raftStateMachine.apply(logData, NULL);
+        if (res < 0) {
+            LOG(INFO) << LVAR(__FUNCTION__) << "err " << LVAR(res) << LVAR(pathname);
+            return res;
+        }
+        return res;
+    } else {
+        res = ::chmod(fixPath(pathname).c_str(), mode);
+        if (res == -1)
+            return -errno;
+        return 0;
+    }
+
+    return 0;
+}
+
+int FuseFS::chown(const string &pathname, uid_t uid, gid_t gid) {
+    int res;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname);
+    if (!IsCallBack()) {
+        LogData logData;
+        logData.set_op_type(RaftLog::OP_TYPE_CHOWN);
+        logData.set_func_name(__FUNCTION__);
+        logData.set_pathname(pathname);
+        logData.set_uid(uid);
+        logData.set_gid(gid);
+        res = raftStateMachine.apply(logData, NULL);
+        if (res < 0) {
+            LOG(INFO) << LVAR(__FUNCTION__) << "err " << LVAR(res) << LVAR(pathname);
+            return res;
+        }
+        return res;
+
+    } else {
+        res = ::lchown(fixPath(pathname).c_str(), uid, gid);
+        if (res == -1)
+            return -errno;
+        return 0;
+    }
+    return 0;
+}
+
+int FuseFS::statfs(const string &path, struct statvfs *buf) {
+    return fuse::statfs(path, buf);
+}
+
+int FuseFS::flush(const string &pathname, struct fuse_file_info *fi) {
+    return fuse::flush(pathname, fi);
+}
+
+int FuseFS::fsync(const string &pathname, int datasync, struct fuse_file_info *fi) {
+    return fuse::fsync(pathname, datasync, fi);
+}
+
+int FuseFS::setxattr(const string &path, const string &name, const string &value, size_t size, int flags) {
+    return fuse::setxattr(path, name, value, size, flags);
+}
+
+int FuseFS::getxattr(const string &path, const string &name, char *value, size_t size) {
+    return fuse::getxattr(path, name, value, size);
+}
+
+int FuseFS::listxattr(const string &path, char *list, size_t size) {
+    return fuse::listxattr(path, list, size);
+}
+
+int FuseFS::removexattr(const string &path, const string &name) {
+    return fuse::removexattr(path, name);
+}
+
+int FuseFS::fsyncdir(const string &pathname, int datasync, struct fuse_file_info *fi) {
+    return fuse::fsyncdir(pathname, datasync, fi);
+}
+
+void FuseFS::init() {
+    fuse::init();
+}
+
+void FuseFS::destroy() {
+    fuse::destroy();
+}
+
+int FuseFS::access(const string &pathname, int mode) {
+    return fuse::access(pathname, mode);
+}
+
+int FuseFS::lock(const string &pathname, struct fuse_file_info *fi, int cmd, struct flock *lock) {
+    return fuse::lock(pathname, fi, cmd, lock);
+}
+
+int FuseFS::bmap(const string &pathname, size_t blocksize, uint64_t *idx) {
+    return fuse::bmap(pathname, blocksize, idx);
+}
+
+int
+FuseFS::ioctl(const string &pathname, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data) {
+    return fuse::ioctl(pathname, cmd, arg, fi, flags, data);
+}
+
+int
+FuseFS::poll(const string &pathname, struct fuse_file_info *fi, struct fuse_pollhandle *ph, unsigned int *reventsp) {
+    return fuse::poll(pathname, fi, ph, reventsp);
+}
+
+int FuseFS::write_buf(const string &pathname, struct fuse_bufvec *buf, off_t off, struct fuse_file_info *fi) {
+    return fuse::write_buf(pathname, buf, off, fi);
+}
+
+int
+FuseFS::read_buf(const string &pathname, struct fuse_bufvec **bufp, size_t size, off_t off, struct fuse_file_info *fi) {
+    return fuse::read_buf(pathname, bufp, size, off, fi);
+}
+
+int FuseFS::flock(const string &pathname, struct fuse_file_info *fi, int op) {
+    return fuse::flock(pathname, fi, op);
+}
+
+int FuseFS::fallocate(const string &pathname, int mode, off_t offset, off_t len, struct fuse_file_info *fi) {
+    return fuse::fallocate(pathname, mode, offset, len, fi);
 }
 

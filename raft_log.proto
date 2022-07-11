@@ -6,15 +6,26 @@ enum OperateType {
     OP_TYPE_WRITE = 1;
     OP_TYPE_UNLINK = 2;
     OP_TYPE_CREATE = 3;
+    OP_TYPE_TRUNCATE = 4;
+    OP_TYPE_SYMLINK = 5;
+    OP_TYPE_RENAME = 6;
+    OP_TYPE_LINK = 7;
+    OP_TYPE_CHMODE = 8;
+    OP_TYPE_CHOWN = 9;
 };
 
 message LogData {
     required OperateType op_type = 2;
     required string func_name = 1;
-    required string pathname = 3;
+    optional string pathname = 3;
     optional int32 count = 4;
     optional uint32 offset = 5;
     optional bytes buf = 6;
     optional int32 flags = 7;
     optional int32 mode = 8;
+    optional int64 length = 9;
+    optional string from = 10;
+    optional string to = 11;
+    optional int64 uid = 12;
+    optional int64 gid = 13;
 }

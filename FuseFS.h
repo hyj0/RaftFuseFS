@@ -69,6 +69,61 @@ public:
 
     virtual int truncate(const string &path, off_t length);
 
+    virtual int readlink(const string &pathname, char *buffer, size_t size);
+
+    virtual int mknod(const string &pathname, mode_t mode, dev_t dev);
+
+    virtual int symlink(const string &target, const string &linkpath);
+
+    virtual int rename(const string &oldpath, const string &newpath, unsigned int flags);
+
+    virtual int link(const string &oldpath, const string &newpath);
+
+    virtual int chmod(const string &pathname, mode_t mode);
+
+    virtual int chown(const string &pathname, uid_t uid, gid_t gid);
+
+    virtual int statfs(const string &path, struct statvfs *buf);
+
+    virtual int flush(const string &pathname, struct fuse_file_info *fi);
+
+    virtual int fsync(const string &pathname, int datasync, struct fuse_file_info *fi);
+
+    virtual int setxattr(const string &path, const string &name, const string &value, size_t size, int flags);
+
+    virtual int getxattr(const string &path, const string &name, char *value, size_t size);
+
+    virtual int listxattr(const string &path, char *list, size_t size);
+
+    virtual int removexattr(const string &path, const string &name);
+
+    virtual int fsyncdir(const string &pathname, int datasync, struct fuse_file_info *fi);
+
+    virtual void init();
+
+    virtual void destroy();
+
+    virtual int access(const string &pathname, int mode);
+
+    virtual int lock(const string &pathname, struct fuse_file_info *fi, int cmd, struct flock *lock);
+
+    virtual int bmap(const string &pathname, size_t blocksize, uint64_t *idx);
+
+    virtual int
+    ioctl(const string &pathname, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data);
+
+    virtual int
+    poll(const string &pathname, struct fuse_file_info *fi, struct fuse_pollhandle *ph, unsigned int *reventsp);
+
+    virtual int write_buf(const string &pathname, struct fuse_bufvec *buf, off_t off, struct fuse_file_info *fi);
+
+    virtual int
+    read_buf(const string &pathname, struct fuse_bufvec **bufp, size_t size, off_t off, struct fuse_file_info *fi);
+
+    virtual int flock(const string &pathname, struct fuse_file_info *fi, int op);
+
+    virtual int fallocate(const string &pathname, int mode, off_t offset, off_t len, struct fuse_file_info *fi);
+
 protected:
     virtual int release(const string &pathname, struct fuse_file_info *fi);
 

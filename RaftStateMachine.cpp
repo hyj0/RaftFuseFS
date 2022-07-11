@@ -83,7 +83,7 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
                     raftClosure->setNRetCode(ret);
                 }
                 if (ret < 0) {
-                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) ;
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString());
                     iter.set_error_and_rollback();
                     return;
                 }
@@ -98,7 +98,7 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
                     raftClosure->setNRetCode(ret);
                 }
                 if (ret < 0) {
-                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) ;
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString());
                     iter.set_error_and_rollback();
                     return;
                 }
@@ -111,7 +111,7 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
                     raftClosure->setNRetCode(ret);
                 }
                 if (ret < 0) {
-                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) ;
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString());
                     iter.set_error_and_rollback();
                     return;
                 }
@@ -126,7 +126,85 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
                     raftClosure->setNRetCode(ret);
                 }
                 if (ret < 0) {
-                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) ;
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString());
+                    iter.set_error_and_rollback();
+                    return;
+                }
+            }
+                break;
+            case RaftLog::OP_TYPE_TRUNCATE: {
+                CallBackLock callBackLock(raftClosure == NULL? 2:1);
+                int ret = ((FuseFS*)pFuseFS)->truncate(logData.pathname(), logData.length());
+                if (raftClosure) {
+                    raftClosure->setNRetCode(ret);
+                }
+                if (ret < 0) {
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString());
+                    iter.set_error_and_rollback();
+                    return;
+                }
+            }
+                break;
+            case RaftLog::OP_TYPE_SYMLINK: {
+                CallBackLock callBackLock(raftClosure == NULL? 2:1);
+                int ret = ((FuseFS*)pFuseFS)->symlink(logData.from(), logData.to());
+                if (raftClosure) {
+                    raftClosure->setNRetCode(ret);
+                }
+                if (ret < 0) {
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString()) ;
+                    iter.set_error_and_rollback();
+                    return;
+                }
+            }
+                break;
+            case RaftLog::OP_TYPE_RENAME: {
+                CallBackLock callBackLock(raftClosure == NULL? 2:1);
+                int ret = ((FuseFS*)pFuseFS)->rename(logData.from(), logData.to(), logData.flags());
+                if (raftClosure) {
+                    raftClosure->setNRetCode(ret);
+                }
+                if (ret < 0) {
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString()) ;
+                    iter.set_error_and_rollback();
+                    return;
+                }
+            }
+                break;
+            case RaftLog::OP_TYPE_LINK:{
+                CallBackLock callBackLock(raftClosure == NULL? 2:1);
+                int ret = ((FuseFS*)pFuseFS)->link(logData.from(), logData.to());
+                if (raftClosure) {
+                    raftClosure->setNRetCode(ret);
+                }
+                if (ret < 0) {
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString()) ;
+                    iter.set_error_and_rollback();
+                    return;
+                }
+            }
+                break;
+            case RaftLog::OP_TYPE_CHMODE:{
+                CallBackLock callBackLock(raftClosure == NULL? 2:1);
+                int ret = ((FuseFS*)pFuseFS)->chmod(logData.pathname(), logData.mode());
+                if (raftClosure) {
+                    raftClosure->setNRetCode(ret);
+                }
+                if (ret < 0) {
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString()) ;
+                    iter.set_error_and_rollback();
+                    return;
+                }
+            }
+                break;
+            case RaftLog::OP_TYPE_CHOWN:{
+                CallBackLock callBackLock(raftClosure == NULL? 2:1);
+                int ret = ((FuseFS*)pFuseFS)->chown(logData.pathname(), logData.uid(), logData.gid());
+                if (raftClosure) {
+                    raftClosure->setNRetCode(ret);
+                }
+                if (ret < 0) {
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString()) ;
                     iter.set_error_and_rollback();
                     return;
                 }
