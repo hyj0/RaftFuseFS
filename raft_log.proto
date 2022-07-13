@@ -12,6 +12,9 @@ enum OperateType {
     OP_TYPE_LINK = 7;
     OP_TYPE_CHMODE = 8;
     OP_TYPE_CHOWN = 9;
+    OP_TYPE_SETXATTR = 10;
+    OP_TYPE_REMOVEATTR = 11;
+    OP_TYPE_FALLOCATE = 12;
 };
 
 message LogData {
@@ -28,4 +31,7 @@ message LogData {
     optional string to = 11;
     optional int64 uid = 12;
     optional int64 gid = 13;
+    optional string name = 14;
+    optional string value = 15;
+    optional int32 size = 16;
 }

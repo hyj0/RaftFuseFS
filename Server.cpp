@@ -25,7 +25,7 @@ void ParseFuseArgs(int *argc, char *** argv)
         char *p = new char[nLen+1];
         memset(p, 0, nLen+1);
         strncpy(p, splitter.field(), nLen);
-        LOG(INFO) << LVAR(splitter.field()) << LVAR(splitter.length());
+//        LOG(INFO) << LVAR(splitter.field()) << LVAR(splitter.length());
         args[*argc] = p;
         (*argc) ++ ;
         ++splitter;

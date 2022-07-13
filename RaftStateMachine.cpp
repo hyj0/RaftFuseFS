@@ -210,6 +210,45 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
                 }
             }
                 break;
+            case RaftLog::OP_TYPE_SETXATTR:{
+                CallBackLock callBackLock(raftClosure == NULL? 2:1);
+                int ret = ((FuseFS*)pFuseFS)->setxattr(logData.pathname(), logData.name(), logData.value(), logData.size(), logData.flags());
+                if (raftClosure) {
+                    raftClosure->setNRetCode(ret);
+                }
+                if (ret < 0) {
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString()) ;
+                    iter.set_error_and_rollback();
+                    return;
+                }
+            }
+                break;
+            case RaftLog::OP_TYPE_REMOVEATTR:{
+                CallBackLock callBackLock(raftClosure == NULL? 2:1);
+                int ret = ((FuseFS*)pFuseFS)->removexattr(logData.pathname(), logData.name());
+                if (raftClosure) {
+                    raftClosure->setNRetCode(ret);
+                }
+                if (ret < 0) {
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString()) ;
+                    iter.set_error_and_rollback();
+                    return;
+                }
+            }
+                break;
+            case RaftLog::OP_TYPE_FALLOCATE:{
+                CallBackLock callBackLock(raftClosure == NULL? 2:1);
+                int ret = ((FuseFS*)pFuseFS)->fallocate(logData.pathname(), logData.mode(), logData.offset(), logData.length(), pFI);
+                if (raftClosure) {
+                    raftClosure->setNRetCode(ret);
+                }
+                if (ret < 0) {
+                    LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString()) ;
+                    iter.set_error_and_rollback();
+                    return;
+                }
+            }
+                break;
             default :
             {
                 LOG(ERROR) <<LVAR(__FUNCTION__)<< " unknown op_type "  << LVAR(logData.op_type()) ;
