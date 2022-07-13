@@ -227,11 +227,25 @@ int FuseFS::create(const std::string &pathname, mode_t mode, struct fuse_file_in
 
 int FuseFS::mkdir(const string &pathname, mode_t mode) {
     int res;
-    //LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) ;
-
-    res = ::mkdir(fixPath(pathname).c_str(), mode);
-    if (res == -1)
-        return -errno;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) ;
+    if (!IsCallBack()) {
+        RaftLog::LogData logData;
+        logData.set_op_type(RaftLog::OP_TYPE_MKDIR);
+        logData.set_func_name(__FUNCTION__);
+        logData.set_pathname(pathname);
+        logData.set_mode(mode);
+        res = raftStateMachine.apply(logData, NULL);
+        if (res < 0) {
+            LOG(ERROR) << "apply err " << LVAR(res) << LVAR(__FUNCTION__) << LVAR(pathname)  ;
+            return res;
+        }
+        return res;
+    } else {
+        res = ::mkdir(fixPath(pathname).c_str(), mode);
+        if (res == -1)
+            return -errno;
+        return res;
+    }
 
     return 0;
 }
@@ -262,22 +276,49 @@ int FuseFS::unlink(const string &pathname) {
 
 int FuseFS::rmdir(const string &pathname) {
     int res;
-    //LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) ;
-
-    res = ::rmdir(fixPath(pathname).c_str());
-    if (res == -1)
-        return -errno;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) ;
+    if (!IsCallBack()) {
+        RaftLog::LogData logData;
+        logData.set_op_type(RaftLog::OP_TYPE_RMDIR);
+        logData.set_func_name(__FUNCTION__);
+        logData.set_pathname(pathname);
+        res = raftStateMachine.apply(logData, NULL);
+        if (res < 0) {
+            LOG(INFO) << LVAR(__FUNCTION__) << "err " << LVAR(res) << LVAR(pathname);
+            return res;
+        }
+        return res;
+    } else {
+        res = ::rmdir(fixPath(pathname).c_str());
+        if (res == -1)
+            return -errno;
+        return res;
+    }
 
     return 0;
 }
 
 int FuseFS::utimens(const string &pathname, const struct timespec tv[2]) {
     int res;
-    //LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) ;
-
-    res = utimensat(0, fixPath(pathname).c_str(), tv, AT_SYMLINK_NOFOLLOW);
-    if (res == -1)
-        return -errno;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) ;
+    if (!IsCallBack()) {
+        RaftLog::LogData logData;
+        logData.set_op_type(RaftLog::OP_TYPE_UTIMENS);
+        logData.set_func_name(__FUNCTION__);
+        logData.set_pathname(pathname);
+        logData.set_tv(tv, sizeof(struct timespec)*2);
+        res = raftStateMachine.apply(logData, NULL);
+        if (res < 0) {
+            LOG(INFO) << LVAR(__FUNCTION__) << "err " << LVAR(res) << LVAR(pathname);
+            return res;
+        }
+        return res;
+    } else {
+        res = utimensat(0, fixPath(pathname).c_str(), tv, AT_SYMLINK_NOFOLLOW);
+        if (res == -1)
+            return -errno;
+        return res;
+    }
 
     return 0;
 }
@@ -469,6 +510,7 @@ int FuseFS::statfs(const string &pathname, struct statvfs *buf) {
 }
 
 int FuseFS::flush(const string &pathname, struct fuse_file_info *fi) {
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname);
     int res;
 
     LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname);
@@ -485,6 +527,7 @@ int FuseFS::flush(const string &pathname, struct fuse_file_info *fi) {
 }
 
 int FuseFS::fsync(const string &pathname, int datasync, struct fuse_file_info *fi) {
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname);
     int res;
 
 #ifndef HAVE_FDATASYNC
@@ -502,6 +545,7 @@ int FuseFS::fsync(const string &pathname, int datasync, struct fuse_file_info *f
 }
 
 int FuseFS::setxattr(const string &pathname, const string &name, const string &value, size_t size, int flags) {
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname);
     if (!IsCallBack()) {
         LogData logData;
         logData.set_op_type(OP_TYPE_SETXATTR);

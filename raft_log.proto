@@ -15,6 +15,9 @@ enum OperateType {
     OP_TYPE_SETXATTR = 10;
     OP_TYPE_REMOVEATTR = 11;
     OP_TYPE_FALLOCATE = 12;
+    OP_TYPE_MKDIR = 13;
+    OP_TYPE_RMDIR = 14;
+    OP_TYPE_UTIMENS = 15;
 };
 
 message LogData {
@@ -34,4 +37,5 @@ message LogData {
     optional string name = 14;
     optional string value = 15;
     optional int32 size = 16;
+    optional bytes tv = 17;
 }
