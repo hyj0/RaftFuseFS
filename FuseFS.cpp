@@ -173,7 +173,7 @@ int FuseFS::write(const std::string &pathname, const char *buf, size_t count, of
             LOG(ERROR) << "app err " << LVAR(res) << LVAR(__FUNCTION__) << LVAR(pathname)  ;
             return res;
         }
-        return 0;
+        return res;
     } else {
         LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname));
         int fd;
@@ -587,7 +587,7 @@ int FuseFS::listxattr(const string &path, char *list, size_t size) {
 int FuseFS::removexattr(const string &pathname, const string &name) {
     if (!IsCallBack()) {
         LogData logData;
-        logData.set_op_type(OP_TYPE_SETXATTR);
+        logData.set_op_type(OP_TYPE_REMOVEATTR);
         logData.set_func_name(__FUNCTION__);
         logData.set_pathname(pathname);
         logData.set_name(name);

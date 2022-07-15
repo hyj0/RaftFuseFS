@@ -235,8 +235,8 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
                 }
                 if (ret < 0) {
                     LOG(ERROR) <<LVAR(__FUNCTION__)<< " callback err"  << LVAR(ret) << LVAR(logData.DebugString()) ;
-                    iter.set_error_and_rollback();
-                    return;
+//                    iter.set_error_and_rollback();
+//                    return;
                 }
             }
                 break;
