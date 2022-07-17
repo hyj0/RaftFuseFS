@@ -26,6 +26,7 @@ int RaftStateMachine::start() {
         LOG(ERROR) << LVAR(__FUNCTION__) << "Fail to parse configuration `" << FLAGS_conf << '\'';
         return -1;
     }
+    loadHasAppliedIndex();
     node_options.election_timeout_ms = FLAGS_election_timeout_ms;
     node_options.fsm = this;
     node_options.node_owns_fsm = false;
@@ -71,6 +72,10 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
             pFI = raftClosure ->getFi();
         } else {
             pFI = NULL;
+            //follower
+            if (getHasAppliedIndex() >= iter.index()) {
+                continue;
+            }
         }
 
         LOG(INFO) << LVAR(__FUNCTION__) << LVAR(logData.func_name());
@@ -301,6 +306,7 @@ void RaftStateMachine::on_apply(braft::Iterator &iter) {
                 return;
             }
         }
+        setHasAppliedIndex(iter.index());
     }
 }
 
@@ -344,6 +350,61 @@ void RaftStateMachine::on_leader_start(int64_t term) {
 void RaftStateMachine::on_leader_stop(const butil::Status &status) {
     _leader_term.store(-1, butil::memory_order_release);
     LOG(INFO) << LVAR(__FUNCTION__) << "Node stepped down : " << status;
+}
+
+void RaftStateMachine::setHasAppliedIndex(int64_t hasAppliedIndex) {
+    if (hasAppliedIndex <= this->hasAppliedIndex) {
+        return;
+    }
+
+    //持久化
+    this->hasAppliedIndex = hasAppliedIndex;
+    char strFile[256];
+    sprintf(strFile, "%s/raft_meta/MetaInfo.txt", FLAGS_data_path.c_str());
+    int fd = open(strFile, O_RDWR|O_CREAT);
+    if (fd < 0) {
+        LOG(ERROR) << "open err " <<LVAR(fd) << LVAR(strFile);
+        return ;
+    }
+
+    char strLine[256];
+    sprintf(strLine, "%020ld", hasAppliedIndex);
+    //
+    int nRetCode = write(fd, strLine, strlen(strLine));
+    if (nRetCode != strlen(strLine)) {
+        LOG(ERROR) << "write err " <<LVAR(nRetCode) << LVAR(strlen(strLine));
+        close(fd);
+        return;
+    }
+    close(fd);
+}
+
+int RaftStateMachine::loadHasAppliedIndex() {
+    //从文件读取
+    char strFile[256];
+    sprintf(strFile, "%s/raft_meta/MetaInfo.txt", FLAGS_data_path.c_str());
+    int fd = open(strFile, O_RDONLY);
+    if (fd < 0) {
+        if (fd == -1) {
+            LOG(ERROR) << "open err " <<LVAR(fd) << LVAR(strFile);
+            return 0;
+        }
+        LOG(ERROR) << "open err " <<LVAR(fd) << LVAR(strFile);
+        return fd;
+    }
+    //00000000000000000159
+    char strLine[1024];
+    memset(strLine, 0, sizeof(strLine));
+    int nRetCode = read(fd, strLine, sizeof(strLine));
+    if (nRetCode < 20) {
+        LOG(ERROR) << "read err " <<LVAR(nRetCode) << LVAR(strFile);
+        close(fd);
+        return nRetCode;
+    }
+    close(fd);
+    hasAppliedIndex = atol(strLine);
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(hasAppliedIndex);
+    return 0;
 }
 
 

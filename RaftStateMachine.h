@@ -29,12 +29,16 @@ public:
 
     virtual void on_leader_stop(const butil::Status &status);
 
-private:
-    int nNode;// 1--30
-    string strGroupId;
-    string strConfig;
-    int nRaftPort;
+    int64_t getHasAppliedIndex() const {
+        return hasAppliedIndex;
+    }
 
+    //设置并持久化hasAppliedIndex
+    void setHasAppliedIndex(int64_t hasAppliedIndex);
+
+    int loadHasAppliedIndex();
+
+private:
     braft::Node* volatile _node;
     butil::atomic<int64_t> _leader_term;
     int64_t hasAppliedIndex = 0; //已经回放的位置，用于跳过已经回放的日志

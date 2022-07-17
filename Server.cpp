@@ -36,8 +36,8 @@ void ParseFuseArgs(int *argc, char *** argv)
 mkdir -p  /tmp/FuseSrc/  /tmp/FuseTarget
 sudo umount /tmp/FuseTarget
 sudo ./cmake-build-debug/Server  -data_path=`pwd`/raft_data   -fuse_args='-d  -o umask=0002 -o uid=1003 -o gid=1003 -o allow_other /tmp/FuseTarget' -src_dir=/tmp/FuseSrc/
-sudo ./cmake-build-debug/Server -port=8101  -conf=10.9.0.164:8100:0 -data_path=`pwd`/raft_data1   -fuse_args='-d -o umask=0002 -o uid=1003 -o gid=1003 -o allow_other /tmp/FuseTarget1' -src_dir=/tmp/FuseSrc1/
-./braft_cli add_peer --group=fuse --conf=10.9.0.164:8100:0  --peer=10.9.0.164:8101:0
+sudo ./cmake-build-debug/Server -port=8101  -conf=`hostname -i`:8100:0 -data_path=`pwd`/raft_data1   -fuse_args='-d -o umask=0002 -o uid=1003 -o gid=1003 -o allow_other /tmp/FuseTarget1' -src_dir=/tmp/FuseSrc1/
+./braft_cli add_peer --group=fuse --conf=`hostname -i`:8100:0  --peer=`hostname -i`:8101:0
 ls /tmp/FuseTarget/
  vim /tmp/FuseTarget/test.txt
 
