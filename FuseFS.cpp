@@ -119,7 +119,19 @@ int FuseFS::releasedir(const string &pathname, struct fuse_file_info *fi) {
 
 int FuseFS::open(const std::string &pathname, struct fuse_file_info *fi) {
     int fd;
-    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) ;
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(fixPath(pathname)) << LVAR(fi->flags) ;
+
+    //read only
+    int flgWrite = (fi->flags & O_WRONLY) || (fi->flags & O_RDWR) || (fi->flags & O_CREAT)
+            || (fi->flags & O_APPEND) || (fi->flags & O_TRUNC) || (fi -> flags & O_EXCL);
+    if (!IsCallBack() && !flgWrite) {
+        fd = ::open(fixPath(pathname).c_str(), fi->flags);
+        if (fd == -1)
+            return -errno;
+
+        fi->fh = fd;
+        return 0;
+    }
     if (!IsCallBack()) {
         RaftLog::LogData logData;
         logData.set_op_type(RaftLog::OP_TYPE_OPEN);
@@ -189,6 +201,10 @@ int FuseFS::write(const std::string &pathname, const char *buf, size_t count, of
         }
         if (res == -1)
             res = -errno;
+        //todo:
+        if (res != count) {
+            return -ENOSYS;
+        }
         return res;
     }
 
