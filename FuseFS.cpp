@@ -4,7 +4,9 @@
 #include <unistd.h>
 #include <cstring>
 #include <sys/xattr.h>
+extern "C" {
 #include <ulockmgr.h>
+}
 #include <sys/file.h>
 
 #include "FuseFS.h"
@@ -380,6 +382,7 @@ int FuseFS::readlink(const string &pathname, char *buffer, size_t size) {
 }
 
 int FuseFS::mknod(const string &pathname, mode_t mode, dev_t dev) {
+    LOG(ERROR) << "no implement" << LVAR(__FUNCTION__);
     return fuse::mknod(pathname, mode, dev);
 }
 
@@ -623,6 +626,7 @@ int FuseFS::removexattr(const string &pathname, const string &name) {
 }
 
 int FuseFS::fsyncdir(const string &pathname, int datasync, struct fuse_file_info *fi) {
+    LOG(ERROR) << "no implement" << LVAR(__FUNCTION__);
     return fuse::fsyncdir(pathname, datasync, fi);
 }
 
@@ -645,26 +649,36 @@ int FuseFS::access(const string &pathname, int mode) {
 }
 
 int FuseFS::lock(const string &pathname, struct fuse_file_info *fi, int cmd, struct flock *lock) {
-
-#if 0
-    return ulockmgr_op(fi->fh, cmd, lock, &fi->lock_owner,
-                       sizeof(fi->lock_owner));
+//    LOG(ERROR) << "no implement" << LVAR(__FUNCTION__);
+    LOG(INFO) << LVAR(__FUNCTION__) << LVAR(pathname) << LVAR(cmd) <<LVAR(fi->lock_owner);
+#if 1
+    int res = fcntl(fi->fh, cmd, lock);
+    if (res == -1) {
+        return -errno;
+    }
+    return 0;
+//    fuse_fs_lock(fd, pathname.c_str(), fi, cmd, lock);
+//    return ulockmgr_op(fi->fh, cmd, lock, &fi->lock_owner,
+//                       sizeof(fi->lock_owner));
 #else
     return fuse::lock(pathname, fi, cmd, lock);
 #endif
 }
 
 int FuseFS::bmap(const string &pathname, size_t blocksize, uint64_t *idx) {
+    LOG(ERROR) << "no implement" << LVAR(__FUNCTION__);
     return fuse::bmap(pathname, blocksize, idx);
 }
 
 int
 FuseFS::ioctl(const string &pathname, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data) {
+    LOG(ERROR) << "no implement" << LVAR(__FUNCTION__);
     return fuse::ioctl(pathname, cmd, arg, fi, flags, data);
 }
 
 int
 FuseFS::poll(const string &pathname, struct fuse_file_info *fi, struct fuse_pollhandle *ph, unsigned int *reventsp) {
+    LOG(ERROR) << "no implement" << LVAR(__FUNCTION__);
     return fuse::poll(pathname, fi, ph, reventsp);
 }
 
@@ -699,7 +713,7 @@ int FuseFS::fallocate(const string &pathname, int mode, off_t offset, off_t leng
         logData.set_mode(mode);
         logData.set_offset(offset);
         logData.set_length(length);
-        int res = raftStateMachine.apply(logData, NULL);
+        int res = raftStateMachine.apply(logData, fi);
         if (res < 0) {
             LOG(INFO) << LVAR(__FUNCTION__) << "err " << LVAR(res) << LVAR(pathname);
             return res;
